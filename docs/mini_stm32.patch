@@ -1,0 +1,147 @@
+diff --git a/config.h b/config.h
+index def4f99..2106713 100644
+--- a/config.h
++++ b/config.h
+@@ -35,21 +35,22 @@
+ 
+ #include "common.h"
+ 
+-#define LED_BANK GPIOA
++#define LED_BANK GPIOB
+ #define LED      5
+ #define BLINK_FAST 0x50000
+ #define BLINK_SLOW 0x100000
+ 
+-#define BUTTON_BANK GPIOC
+-#define BUTTON      9
++#define BUTTON_BANK GPIOB
++#define BUTTON      15
+ 
+ #define STARTUP_BLINKS 5
+ #define BOOTLOADER_WAIT 6
+ 
++/* MCU STM32F103VET6 */
+ #define USER_CODE_RAM     ((u32)0x20000C00)
+-#define RAM_END           ((u32)0x20005000)
++#define RAM_END           ((u32)0x20010000) /* 64K */
+ #define USER_CODE_FLASH   ((u32)0x08005000)
+-#define FLASH_END         ((u32)0x08020000)
++#define FLASH_END         ((u32)0x08080000) /* 512K */
+ 
+ #define VEND_ID0 0xAF
+ #define VEND_ID1 0x1E
+diff --git a/hardware.c b/hardware.c
+index d3d985e..f5a8c93 100644
+--- a/hardware.c
++++ b/hardware.c
+@@ -99,37 +99,59 @@ void setupLED(void) {
+     // todo, swap out hardcoded pin/bank with macro
+     u32 rwmVal; /* read-write-modify place holder var */
+ 
+-    /* Setup APB2 (GPIOA) */
++    /* Setup APB2 (GPIOB) */
+     rwmVal =  GET_REG(RCC_APB2ENR);
+-    rwmVal |= 0x00000004;
++    rwmVal |= 0x00000008;
+     SET_REG(RCC_APB2ENR, rwmVal);
+ 
+-    /* Setup GPIOA Pin 5 as PP Out */
++    /* Setup GPIOB Pin 5 as PP Out */
+     SET_REG(GPIO_CRL(GPIOA), 0x00100000);
+ 
+-    rwmVal =  GET_REG(GPIO_CRL(GPIOA));
++    rwmVal =  GET_REG(GPIO_CRL(GPIOB));
++    // rwmVal &= 0xFF0FFFFF;
++    // rwmVal |= 0x00100000;
+     rwmVal &= 0xFF0FFFFF;
+     rwmVal |= 0x00100000;
+-    SET_REG(GPIO_CRL(GPIOA), rwmVal);
++    SET_REG(GPIO_CRL(GPIOB), rwmVal);
++
++    setPin(GPIOB, 5); // LED on
++
+ 
+-    setPin(GPIOA, 5);
+ }
+ 
+-void setupBUTTON(void) {
++void setupUSBPin(void) {
+     // todo, swap out hardcoded pin/bank with macro
+     u32 rwmVal; /* read-write-modify place holder var */
+ 
++    /* Setup USB control pin */
+     /* Setup APB2 (GPIOC) */
+     rwmVal =  GET_REG(RCC_APB2ENR);
+     rwmVal |= 0x00000010;
+     SET_REG(RCC_APB2ENR, rwmVal);
+ 
+-    /* Setup GPIOC Pin 9 as PP Out */
++    /* Setup GPIOC Pin 13 as PP Out */
+     rwmVal =  GET_REG(GPIO_CRH(GPIOC));
+-    rwmVal &= 0xFFFFFF0F;
+-    rwmVal |= 0x00000040;
++    rwmVal &= 0xFF0FFFFF;
++    rwmVal |= 0x00100000;
+     SET_REG(GPIO_CRH(GPIOC), rwmVal);
+ 
++    resetPin(GPIOC, 13); // USB on
++}
++
++void setupBUTTON(void) {
++    // todo, swap out hardcoded pin/bank with macro
++    u32 rwmVal; /* read-write-modify place holder var */
++
++    /* Setup APB2 (GPIOB) */
++    rwmVal =  GET_REG(RCC_APB2ENR);
++    rwmVal |= 0x00000008; // GPIOB
++    SET_REG(RCC_APB2ENR, rwmVal);
++
++    /* Setup GPIOB Pin 15 as Pulled In */
++    rwmVal =  GET_REG(GPIO_CRH(GPIOB));
++    rwmVal &= 0x0FFFFFFF;
++    rwmVal |= 0x40000000;
++    SET_REG(GPIO_CRH(GPIOB), rwmVal);
+ }
+ 
+ void setupFLASH() {
+@@ -166,7 +188,7 @@ void jumpToUser(u32 usrAddr) {
+     flashLock();
+     usbDsbISR();
+     nvicDisableInterrupts();
+-    setPin(GPIOC, 12); // disconnect usb from host. todo, macroize pin
++    setPin(GPIOC, 13); // disconnect usb from host. todo, macroize pin
+     systemReset(); // resets clocks and periphs, not core regs
+ 
+ 
+diff --git a/hardware.h b/hardware.h
+index 70f06c7..cb22d90 100644
+--- a/hardware.h
++++ b/hardware.h
+@@ -33,6 +33,7 @@
+ #define RCC   ((u32)0x40021000)
+ #define FLASH ((u32)0x40022000)
+ #define GPIOA ((u32)0x40010800)
++#define GPIOB ((u32)0x40010C00)
+ #define GPIOC ((u32)0x40011000)
+ 
+ #define RCC_CR      RCC
+@@ -173,6 +174,7 @@ void systemHardReset(void);
+ void systemReset(void);
+ void setupCLK(void);
+ void setupLED(void);
++void setupUSBPin(void);
+ void setupFLASH(void);
+ void setupBUTTON(void);
+ bool checkUserCode(u32 usrAddr);
+diff --git a/main.c b/main.c
+index 5c06617..4c8978c 100644
+--- a/main.c
++++ b/main.c
+@@ -37,6 +37,7 @@ int main() {
+     systemReset(); // peripherals but not PC
+     setupCLK();
+     setupLED();
++    setupUSBPin();
+     setupUSB();
+     setupBUTTON();
+     setupFLASH();

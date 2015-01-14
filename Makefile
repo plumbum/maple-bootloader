@@ -17,9 +17,11 @@ ST_LIB = stm32_lib
 ST_USB = usb_lib
 
 # Optimization level [0,1,2,3,s]
-OPT ?= 0
-DEBUG = 
+#OPT ?= 0
+#DEBUG = 
 #DEBUG = dwarf-2
+OPT=0
+DEBUG=-ggdb
 
 INCDIRS = ./$(ST_LIB) ./$(ST_USB)
 
@@ -241,9 +243,19 @@ clean_list :
 
 # Listing of phony targets.
 .PHONY : all begin finish tags end sizeafter gccversion \
-build elf hex bin lss sym clean clean_list program cscope
+build elf hex bin lss sym clean clean_list program cscope \
+tags load stlink
 
 cscope:
 	rm -rf *.cscope
 	find . -iname "*.[hcs]" | grep -v examples | xargs cscope -R -b
+
+tags:
+	ctags -R --c++-kinds=+p --fields=+iaS --extra=+q . 
+
+load: $(TARGET).elf
+	arm-none-eabi-gdb build/maple_boot.elf -ex "tar ext :4242"
+
+stlink:
+	st-util
 

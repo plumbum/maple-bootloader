@@ -47,10 +47,11 @@
 #define BOOTLOADER_WAIT 6
 
 /* MCU STM32F103VET6 */
+#define FLASH_PAGE_SIZE   (0x0800)
 #define USER_CODE_RAM     ((u32)0x20000C00)
-#define RAM_END           ((u32)0x20010000) /* 64K */
+#define RAM_END           ((u32)0x2000FFFF) /* 64K */
 #define USER_CODE_FLASH   ((u32)0x08005000)
-#define FLASH_END         ((u32)0x08080000) /* 512K */
+#define FLASH_END         ((u32)0x0807FFFF) /* 512K */
 
 #define VEND_ID0 0xAF
 #define VEND_ID1 0x1E

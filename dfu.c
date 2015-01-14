@@ -368,7 +368,10 @@ void dfuCopyBufferToExec() {
     } else {
         userSpace = (u32 *)(USER_CODE_FLASH + userFirmwareLen);
 
-        flashErasePage((u32)(userSpace));
+        /* Erase flash page on demand */
+        if(((unsigned int)userSpace % FLASH_PAGE_SIZE) == 0) { /* WARNING! unsafe for 64bit systems ;-) */
+            flashErasePage((u32)(userSpace));
+        }
 
         for (i = 0; i < thisBlockLen; i = i + 4) {
             flashWriteWord((u32)(userSpace++), *(u32 *)(recvBuffer +i));

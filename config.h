@@ -35,21 +35,22 @@
 
 #include "common.h"
 
-#define LED_BANK GPIOA
+#define LED_BANK GPIOB
 #define LED      5
 #define BLINK_FAST 0x50000
 #define BLINK_SLOW 0x100000
 
-#define BUTTON_BANK GPIOC
-#define BUTTON      9
+#define BUTTON_BANK GPIOB
+#define BUTTON      15
 
 #define STARTUP_BLINKS 5
 #define BOOTLOADER_WAIT 6
 
+/* MCU STM32F103VET6 */
 #define USER_CODE_RAM     ((u32)0x20000C00)
-#define RAM_END           ((u32)0x20005000)
+#define RAM_END           ((u32)0x20010000) /* 64K */
 #define USER_CODE_FLASH   ((u32)0x08005000)
-#define FLASH_END         ((u32)0x08020000)
+#define FLASH_END         ((u32)0x08080000) /* 512K */
 
 #define VEND_ID0 0xAF
 #define VEND_ID1 0x1E

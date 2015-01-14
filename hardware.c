@@ -99,37 +99,59 @@ void setupLED(void) {
     // todo, swap out hardcoded pin/bank with macro
     u32 rwmVal; /* read-write-modify place holder var */
 
-    /* Setup APB2 (GPIOA) */
+    /* Setup APB2 (GPIOB) */
     rwmVal =  GET_REG(RCC_APB2ENR);
-    rwmVal |= 0x00000004;
+    rwmVal |= 0x00000008;
     SET_REG(RCC_APB2ENR, rwmVal);
 
-    /* Setup GPIOA Pin 5 as PP Out */
+    /* Setup GPIOB Pin 5 as PP Out */
     SET_REG(GPIO_CRL(GPIOA), 0x00100000);
 
-    rwmVal =  GET_REG(GPIO_CRL(GPIOA));
+    rwmVal =  GET_REG(GPIO_CRL(GPIOB));
+    // rwmVal &= 0xFF0FFFFF;
+    // rwmVal |= 0x00100000;
     rwmVal &= 0xFF0FFFFF;
     rwmVal |= 0x00100000;
-    SET_REG(GPIO_CRL(GPIOA), rwmVal);
+    SET_REG(GPIO_CRL(GPIOB), rwmVal);
 
-    setPin(GPIOA, 5);
+    setPin(GPIOB, 5); // LED on
+
+
+}
+
+void setupUSBPin(void) {
+    // todo, swap out hardcoded pin/bank with macro
+    u32 rwmVal; /* read-write-modify place holder var */
+
+    /* Setup USB control pin */
+    /* Setup APB2 (GPIOC) */
+    rwmVal =  GET_REG(RCC_APB2ENR);
+    rwmVal |= 0x00000010;
+    SET_REG(RCC_APB2ENR, rwmVal);
+
+    /* Setup GPIOC Pin 13 as PP Out */
+    rwmVal =  GET_REG(GPIO_CRH(GPIOC));
+    rwmVal &= 0xFF0FFFFF;
+    rwmVal |= 0x00100000;
+    SET_REG(GPIO_CRH(GPIOC), rwmVal);
+
+    resetPin(GPIOC, 13); // USB on
 }
 
 void setupBUTTON(void) {
     // todo, swap out hardcoded pin/bank with macro
     u32 rwmVal; /* read-write-modify place holder var */
 
-    /* Setup APB2 (GPIOC) */
+    /* Setup APB2 (GPIOB) */
     rwmVal =  GET_REG(RCC_APB2ENR);
-    rwmVal |= 0x00000010;
+    rwmVal |= 0x00000008; // GPIOB
     SET_REG(RCC_APB2ENR, rwmVal);
 
-    /* Setup GPIOC Pin 9 as PP Out */
-    rwmVal =  GET_REG(GPIO_CRH(GPIOC));
-    rwmVal &= 0xFFFFFF0F;
-    rwmVal |= 0x00000040;
-    SET_REG(GPIO_CRH(GPIOC), rwmVal);
-
+    /* Setup GPIOB Pin 15 as Pulled In */
+    rwmVal =  GET_REG(GPIO_CRH(GPIOB));
+    rwmVal &= 0x0FFFFFFF;
+    rwmVal |= 0x40000000;
+    SET_REG(GPIO_CRH(GPIOB), rwmVal);
 }
 
 void setupFLASH() {
@@ -166,7 +188,7 @@ void jumpToUser(u32 usrAddr) {
     flashLock();
     usbDsbISR();
     nvicDisableInterrupts();
-    setPin(GPIOC, 12); // disconnect usb from host. todo, macroize pin
+    setPin(GPIOC, 13); // disconnect usb from host. todo, macroize pin
     systemReset(); // resets clocks and periphs, not core regs
 
 
